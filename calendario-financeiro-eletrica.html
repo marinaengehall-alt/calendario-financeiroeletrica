@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendário Financeiro — Elétrica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f7f5;
+    --surface: #ffffff;
+    --surface-alt: #f2f2ef;
+    --border: #e4e4e0;
+    --border-strong: #c8c8c2;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6b66;
+    --text-muted: #9d9d97;
+    --accent: #1d4ed8;
+
+    --c-diario-bg: #dbeafe;
+    --c-diario-text: #1e40af;
+    --c-diario-dot: #3b82f6;
+    --c-semanal-bg: #d1fae5;
+    --c-semanal-text: #065f46;
+    --c-semanal-dot: #10b981;
+    --c-quinzenal-bg: #fef3c7;
+    --c-quinzenal-text: #92400e;
+    --c-quinzenal-dot: #f59e0b;
+    --c-mensal-bg: #ede9fe;
+    --c-mensal-text: #4c1d95;
+    --c-mensal-dot: #8b5cf6;
+    --c-pontual-bg: #fee2e2;
+    --c-pontual-text: #991b1b;
+    --c-pontual-dot: #ef4444;
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.07);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
+  }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .logo-mark {
+    width: 32px; height: 32px;
+    background: var(--text-primary);
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-mark svg { width: 18px; height: 18px; }
+  .header-title { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+  .header-sub { font-size: 12px; color: var(--text-secondary); margin-top: 1px; }
+  .print-btn {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 500;
+    color: var(--text-secondary);
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .print-btn:hover { background: var(--border); color: var(--text-primary); }
+
+  /* ── Main layout ── */
+  main { max-width: 1200px; margin: 0 auto; padding: 2rem 2rem 4rem; }
+
+  /* ── Controls bar ── */
+  .controls {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .nav-group { display: flex; align-items: center; gap: 10px; }
+  .nav-btn {
+    width: 36px; height: 36px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-primary);
+    transition: background .15s, border-color .15s;
+  }
+  .nav-btn:hover { background: var(--surface-alt); border-color: var(--border-strong); }
+  .nav-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .month-label { font-size: 20px; font-weight: 600; color: var(--text-primary); min-width: 200px; text-align: center; }
+  .today-btn {
+    font-size: 12px; font-weight: 500;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 16px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: background .15s;
+  }
+  .today-btn:hover { background: var(--surface-alt); color: var(--text-primary); }
+
+  /* ── Filters ── */
+  .filters-row {
+    display: flex; align-items: center;
+    flex-wrap: wrap; gap: 8px;
+    margin-bottom: 1.5rem;
+  }
+  .filters-label { font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; margin-right: 4px; }
+  .filter-chip {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 500;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    transition: opacity .15s, transform .1s;
+    user-select: none;
+  }
+  .filter-chip:active { transform: scale(0.97); }
+  .filter-chip .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .filter-chip.off { opacity: .35; filter: grayscale(.6); }
+
+  /* ── Legend ── */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 14px;
+    margin-bottom: 1.75rem;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+  .leg-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-secondary); }
+  .leg-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── Calendar grid ── */
+  .week-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+    margin-bottom: 3px;
+  }
+  .week-header div {
+    font-size: 11px; font-weight: 600;
+    color: var(--text-muted);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    padding: 6px 0;
+  }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+  }
+  .cell {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px;
+    min-height: 100px;
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s;
+    position: relative;
+  }
+  .cell:hover:not(.ghost):not(.weekend-cell) {
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-sm);
+    z-index: 1;
+  }
+  .cell.ghost {
+    background: transparent;
+    border-color: transparent;
+    cursor: default;
+    pointer-events: none;
+  }
+  .cell.weekend-cell {
+    background: var(--surface-alt);
+    cursor: default;
+  }
+  .cell.today-cell {
+    border-color: var(--accent);
+    border-width: 2px;
+  }
+  .cell.has-tasks:hover { box-shadow: var(--shadow-md); }
+
+  .day-num {
+    font-size: 13px; font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .day-num.is-today {
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .today-badge {
+    font-size: 10px; font-weight: 600;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 10px;
+    padding: 1px 6px;
+    letter-spacing: .02em;
+  }
+  .pills { display: flex; flex-direction: column; gap: 3px; }
+  .pill {
+    font-size: 10px; font-weight: 500;
+    padding: 3px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+  }
+  .more-lbl { font-size: 10px; color: var(--text-muted); margin-top: 2px; padding-left: 2px; }
+  .empty-lbl { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+
+  /* ── Modal ── */
+  .modal-bg {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(10,10,8,.5);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    backdrop-filter: blur(2px);
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    width: 100%;
+    max-width: 540px;
+    max-height: 85vh;
+    overflow-y: auto;
+    position: relative;
+    animation: slideUp .2s ease;
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .modal-header {
+    padding: 1.5rem 1.5rem 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+    position: sticky; top: 0; background: var(--surface);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+  .modal-date { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+  .modal-date-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+  .close-btn {
+    width: 30px; height: 30px; flex-shrink: 0;
+    background: var(--surface-alt);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-secondary);
+    font-size: 16px;
+    transition: background .15s;
+  }
+  .close-btn:hover { background: var(--border); }
+  .modal-body { padding: 1.25rem 1.5rem 1.5rem; display: flex; flex-direction: column; gap: 10px; }
+
+  .task-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    transition: box-shadow .15s;
+  }
+  .task-card:hover { box-shadow: var(--shadow-sm); }
+  .task-card-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+  }
+  .task-cat-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .task-title { font-size: 13px; font-weight: 600; color: var(--text-primary); flex: 1; }
+  .task-badge {
+    font-size: 10px; font-weight: 500;
+    padding: 2px 8px; border-radius: 10px;
+    white-space: nowrap;
+  }
+  .chevron {
+    width: 16px; height: 16px;
+    color: var(--text-muted);
+    transition: transform .2s;
+    flex-shrink: 0;
+  }
+  .chevron svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .task-card.expanded .chevron { transform: rotate(180deg); }
+  .task-card-body {
+    display: none;
+    padding: 0 14px 14px;
+    border-top: 1px solid var(--border);
+  }
+  .task-card.expanded .task-card-body { display: block; }
+  .task-meta-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 8px; }
+  .meta-chip {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 11px; color: var(--text-secondary);
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3px 10px;
+  }
+  .meta-chip svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  .task-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.7; }
+
+  /* ── Print ── */
+  @media print {
+    header .print-btn { display: none; }
+    .controls, .filters-row { display: none; }
+    .modal-bg { display: none !important; }
+    body { background: white; }
+    .cell { break-inside: avoid; }
+    .legend { border: 1px solid #ccc; }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    main { padding: 1rem 1rem 3rem; }
+    header { padding: 0 1rem; }
+    .month-label { font-size: 16px; min-width: 150px; }
+    .cell { min-height: 70px; padding: 5px; }
+    .day-num { font-size: 11px; }
+    .pill { font-size: 9px; }
+    .week-header div { font-size: 9px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo-mark">
+      <svg viewBox="0 0 18 18" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="3" width="14" height="12" rx="2"/>
+        <path d="M2 7h14"/>
+        <path d="M6 3v4M12 3v4"/>
+      </svg>
+    </div>
+    <div>
+      <div class="header-title">Calendário Financeiro</div>
+      <div class="header-sub">Elétrica — Engehall</div>
+    </div>
+  </div>
+  <button class="print-btn" onclick="window.print()">
+    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 5V2h8v3M4 11H2V6h12v5h-2M4 9h8v5H4z"/>
+    </svg>
+    Imprimir mês
+  </button>
+</header>
+
+<main>
+  <div class="controls">
+    <div class="nav-group">
+      <button class="nav-btn" id="btn-prev" aria-label="Mês anterior" onclick="changeMonth(-1)">
+        <svg viewBox="0 0 16 16"><polyline points="10 12 6 8 10 4"/></svg>
+      </button>
+      <div class="month-label" id="month-label"></div>
+      <button class="nav-btn" id="btn-next" aria-label="Próximo mês" onclick="changeMonth(1)">
+        <svg viewBox="0 0 16 16"><polyline points="6 4 10 8 6 12"/></svg>
+      </button>
+    </div>
+    <button class="today-btn" onclick="goToday()">Hoje</button>
+  </div>
+
+  <div class="filters-row">
+    <span class="filters-label">Filtrar por</span>
+    <div id="filters"></div>
+  </div>
+
+  <div class="legend" id="legend"></div>
+
+  <div class="week-header">
+    <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+  </div>
+  <div class="cal-grid" id="grid"></div>
+</main>
+
+<!-- Modal -->
+<div class="modal-bg" id="modal-bg" onclick="bgClick(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-date" id="m-date"></div>
+        <div class="modal-date-sub" id="m-sub"></div>
+      </div>
+      <button class="close-btn" onclick="closeModal()" aria-label="Fechar">×</button>
+    </div>
+    <div class="modal-body" id="m-body"></div>
+  </div>
+</div>
+
+<script>
+const CATS = {
+  diario:   { label: 'Diário',        bg: 'var(--c-diario-bg)',    text: 'var(--c-diario-text)',    dot: 'var(--c-diario-dot)' },
+  semanal:  { label: 'Semanal',       bg: 'var(--c-semanal-bg)',   text: 'var(--c-semanal-text)',   dot: 'var(--c-semanal-dot)' },
+  quinzenal:{ label: 'Quinzenal',     bg: 'var(--c-quinzenal-bg)', text: 'var(--c-quinzenal-text)', dot: 'var(--c-quinzenal-dot)' },
+  mensal:   { label: 'Mensal',        bg: 'var(--c-mensal-bg)',    text: 'var(--c-mensal-text)',    dot: 'var(--c-mensal-dot)' },
+  pontual:  { label: 'Pontual / Data',bg: 'var(--c-pontual-bg)',   text: 'var(--c-pontual-text)',   dot: 'var(--c-pontual-dot)' },
+};
+
+const TASKS = [
+  {
+    id:1, title:'Conciliação bancária — entradas', cat:'diario',
+    resp:'Alvaro', freq:'Todos os dias úteis',
+    desc:'Acessar Conta Azul e verificar se há lançamentos de entradas em aberto. Conferir no Pagar.me eventuais pendências do dia.',
+    rule: d => isUtil(d)
+  },
+  {
+    id:2, title:'Conciliação bancária — saídas', cat:'diario',
+    resp:'Eulália', freq:'Todos os dias úteis',
+    desc:'Verificar e registrar saídas no Conta Azul diariamente. Garantir que todos os pagamentos realizados estejam lançados corretamente.',
+    rule: d => isUtil(d)
+  },
+  {
+    id:3, title:'Atualização fluxo de caixa Pagar.me', cat:'diario',
+    resp:'Alvaro', freq:'Todos os dias úteis',
+    desc:'Acessar Pagar.me > Extratos, selecionar período do dia anterior. Verificar valor de vendas, taxas, chargebacks e estornos. Copiar valores para a planilha de fluxo de caixa e conferir se o saldo bate. Se não bater, encontrar a divergência antes de finalizar.',
+    rule: d => isUtil(d)
+  },
+  {
+    id:4, title:'Recebimento de notas/boletos e cadastro', cat:'diario',
+    resp:'Eulália', freq:'Todos os dias úteis',
+    desc:'Acessar e-mail financeiro1@engehall.com, filtrar boletos, faturas e notas fiscais. Cadastrar todos no Conta Azul com anexo. Provisionar os que têm recorrência conhecida.',
+    rule: d => isUtil(d)
+  },
+  {
+    id:5, title:'Monitorar transações e limites de cartões', cat:'diario',
+    resp:'Marcela', freq:'Todos os dias úteis',
+    desc:'Monitorar via e-mail (financeiro2@engehall.com.br) se alguma transação foi recusada. Verificar Banco Itaú e Conta Simples. Se cartão vencido: gerar novo. Se limite estourado: verificar origem com responsável e avaliar aumento de limite.',
+    rule: d => isUtil(d)
+  },
+  {
+    id:6, title:'Saque Pagar.me', cat:'semanal',
+    resp:'Alvaro', freq:'Toda segunda-feira',
+    desc:'Acessar Pagar.me e conferir saldo disponível. Realizar saque SOMENTE se saldo estiver acima de R$ 10.000 — abaixo disso, aguardar a próxima semana para manter reserva contra chargebacks. Conciliação no Conta Azul feita na terça-feira seguinte.',
+    rule: d => isUtil(d) && d.getDay() === 1
+  },
+  {
+    id:7, title:'Acompanhamento inadimplentes TMB', cat:'semanal',
+    resp:'Alvaro', freq:'Toda segunda-feira',
+    desc:'Acessar TMB > Financeiro > Contratos > Contas a Receber > filtrar status "vencidos". Exportar lista, comparar com a semana anterior identificando entradas e saídas. Repassar lista atualizada para Elisa (comercial) via WhatsApp.',
+    rule: d => isUtil(d) && d.getDay() === 1
+  },
+  {
+    id:8, title:'Agendamento e pagamento de fornecedores', cat:'semanal',
+    resp:'Marcela', freq:'Segundas e quintas-feiras',
+    desc:'Acessar Banco Itaú (celular corporativo ou computador). Fazer leitura do código de barras, agendar data de pagamento, anexar NF ou anotar nome do boleto e vencimento no comprovante. Após agendar tudo, gerar relatório "contas a autorizar" no Conta Azul (Contas a Pagar > Consulta > filtrar por data), salvar em PDF e enviar para Eulália. Eulália confere com Luís via WhatsApp, que dá a aprovação final.',
+    rule: d => isUtil(d) && (d.getDay() === 1 || d.getDay() === 4)
+  },
+  {
+    id:9, title:'Atualização fluxo de caixa TMB', cat:'semanal',
+    resp:'Alvaro', freq:'Quarta-feira (a cada 2–3 dias)',
+    desc:'Acessar TMB > Finanças e Contratos > Carteira. Verificar novas vendas e parcelas pagas desde a última atualização. Para nova venda: cadastrar no Conta Azul. Para pagamento de parcela existente: dar baixa. Lançar também as duas taxas de serviço obrigatórias do TMB por compra.',
+    rule: d => isUtil(d) && d.getDay() === 3
+  },
+  {
+    id:10, title:'Conferência de duplicidades de pagamentos', cat:'quinzenal',
+    resp:'Alvaro', freq:'Dias 1 e 15 de cada mês',
+    desc:'Acessar dashboard do Bernardo e verificar se há pagamentos duplicados. Se houver, preencher formulário de duplicidade para que o comercial faça a tratativa com o cliente.',
+    rule: d => isUtil(d) && (d.getDate() === 1 || d.getDate() === 15)
+  },
+  {
+    id:11, title:'Saque TMB — mensal', cat:'mensal',
+    resp:'Alvaro', freq:'Primeira segunda-feira do mês',
+    desc:'Na primeira segunda-feira de cada mês: acessar TMB e conferir saldo disponível. Realizar saque SOMENTE se saldo estiver acima de R$ 5.000. Abaixo disso, aguardar a semana seguinte.',
+    rule: d => isUtil(d) && d.getDay() === 1 && d.getDate() <= 7
+  },
+  {
+    id:12, title:'Fechamento de faturas dos cartões', cat:'mensal',
+    resp:'Marcela', freq:'Entre os dias 1 e 5',
+    desc:'Verificar transações recebidas no e-mail financeiro2, subir lançamentos no Conta Azul. Fechar faturas dos cartões corporativos do Conta Simples. Confirmar que todas as despesas do mês anterior estão registradas.',
+    rule: d => isUtil(d) && d.getDate() === 3
+  },
+  {
+    id:13, title:'Fechamento da apresentação mensal', cat:'mensal',
+    resp:'Marcela + Alvaro + Eulália', freq:'Primeira segunda-feira do mês',
+    desc:'Alvaro confronta valores do dashboard com Pagar.me — se não bater, acionar Bernardo via ClickUp. Preencher planilha com receitas categorizadas. Alimentar apresentação em PowerPoint com dados do mês anterior. Bruna preenche dados de eventos (meteóricos, lançamentos). Compartilhar análise no grupo dos sócios.',
+    rule: d => isUtil(d) && d.getDay() === 1 && d.getDate() <= 7
+  },
+  {
+    id:14, title:'Envio de NFs para a contabilidade', cat:'mensal',
+    resp:'Eulália', freq:'Até o dia 5 (preferência: dia 4)',
+    desc:'ATENÇÃO: enviar antes do dia 5 para evitar ISS com multa (vence ~dia 8). Conferir NFs de entrada de produto no Conta Azul. Buscar NFs de serviço tomado no Portal Nacional (nfse.gov.br). Gerar relatório de notas de receita no Notazz. Alimentar Drive compartilhado e formalizar envio por e-mail para contabilidade Grecco.',
+    rule: d => isUtil(d) && d.getDate() === 4
+  },
+  {
+    id:15, title:'Verificar domínios e certificados digitais', cat:'mensal',
+    resp:'Marcela', freq:'Início do mês (~dia 8)',
+    desc:'Verificar no Conta Azul e na planilha de ferramentas (compartilhada com Bernardo) se algum domínio ou certificado digital está próximo de vencer. Para renovação de certificado digital, acionar diretores para liberar acesso (verificação vinculada ao celular/e-mail deles).',
+    rule: d => isUtil(d) && d.getDate() === 8
+  },
+  {
+    id:16, title:'Pagamento do ISS próprio', cat:'pontual',
+    resp:'Eulália', freq:'Vence aproximadamente no dia 8',
+    desc:'Receber guia da contabilidade (gerada após envio das NFs). Efetuar pagamento via Banco Itaú antes do vencimento. Atenção: envio tardio das NFs resulta em ISS pago com encargo de atraso.',
+    rule: d => isUtil(d) && d.getDate() === 8
+  },
+  {
+    id:17, title:'Atualização planilha de ferramentas', cat:'mensal',
+    resp:'Marcela + Bernardo', freq:'Reunião mensal (~dia 10)',
+    desc:'Reunião mensal com Bernardo para revisar planilha de ferramentas e atualizar valores. Verificar variações de custo. Se alguma ferramenta estiver com custo elevado, acionar setor responsável para avaliar alternativas. Informações consolidadas no dashboard do Bernardo.',
+    rule: d => isUtil(d) && d.getDate() === 10
+  },
+  {
+    id:18, title:'Preenchimento e conferência da DR', cat:'mensal',
+    resp:'Marcela + Eulália', freq:'A partir do dia 10',
+    desc:'Aguardar fechamento da fatura do Banco Itaú. Acessar Conta Azul (despesas), Dashboard do Bernardo (tráfego) e relatório mensal de fechamento (receita). Preencher planilha da DR. Avaliar oscilações de despesas, margens, lucro líquido e categorias discrepantes. Planilha: docs.google.com/spreadsheets/d/1Rcp3By2nONYbpeNIXqKoa39dgLR68faTf1EO2E6tHSY',
+    rule: d => isUtil(d) && d.getDate() === 10
+  },
+  {
+    id:19, title:'Conferência mensal do fluxo de caixa', cat:'mensal',
+    resp:'Eulália', freq:'Até o dia 10',
+    desc:'Acessar Conta Azul > Fluxo de Caixa. Verificar se o saldo do sistema bate com os saldos bancários reais (Banco Itaú, Pagar.me, Conta Simples). Identificar e corrigir divergências antes de fechar o mês.',
+    rule: d => isUtil(d) && d.getDate() === 10
+  },
+  {
+    id:20, title:'Pagamento IR retido', cat:'pontual',
+    resp:'Eulália', freq:'Vence dia 20',
+    desc:'Receber guia de IR retido da contabilidade. Efetuar pagamento via Banco Itaú até o dia 20. Registrar pagamento no Conta Azul com comprovante anexado.',
+    rule: d => isUtil(d) && d.getDate() === 20
+  },
+  {
+    id:21, title:'Pagamento PIS, Cofins, ICMS e ISS retido', cat:'pontual',
+    resp:'Eulália', freq:'Vence dia 25',
+    desc:'Receber guias da contabilidade. Efetuar pagamento de PIS, Cofins, ICMS e ISS retido até o dia 25 via Banco Itaú. Registrar todos no Conta Azul com comprovantes anexados.',
+    rule: d => isUtil(d) && d.getDate() === 25
+  },
+  {
+    id:22, title:'Conferência NFs — notas x vendas', cat:'mensal',
+    resp:'Alvaro', freq:'Final do mês',
+    desc:'Acessar Notazz e Pagar.me. Confrontar valores das notas fiscais emitidas com os valores das vendas registradas. Se o Notazz não tiver cancelado automaticamente alguma nota, verificar no Pagar.me e cancelar manualmente — abrir chamado com equipe do sistema.',
+    rule: d => isUtil(d) && d.getDate() === 28
+  },
+  {
+    id:23, title:'Conciliação bancária mensal — Conta Simples', cat:'mensal',
+    resp:'Marcela / Eulália', freq:'Final do mês',
+    desc:'Conta Simples é conciliada apenas uma vez ao mês (tem somente um rendimento mensal). Conferir todos os lançamentos do período e verificar se o saldo está correto.',
+    rule: d => isUtil(d) && d.getDate() === 28
+  },
+];
+
+// ── State ──
+const TODAY = new Date(2026, 5, 15);
+let cur = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
+let activeFilters = new Set(Object.keys(CATS));
+
+function isUtil(d) { return d.getDay() !== 0 && d.getDay() !== 6; }
+
+function getTasksFor(date) {
+  return TASKS.filter(t => activeFilters.has(t.cat) && t.rule(date));
+}
+
+// ── Filters ──
+function buildFilters() {
+  const wrap = document.getElementById('filters');
+  const lg = document.getElementById('legend');
+  wrap.style.display = 'flex';
+  wrap.style.flexWrap = 'wrap';
+  wrap.style.gap = '6px';
+
+  for (const [k, v] of Object.entries(CATS)) {
+    const btn = document.createElement('button');
+    btn.className = 'filter-chip';
+    btn.dataset.cat = k;
+    btn.innerHTML = `<span class="dot" style="background:${v.dot}"></span>${v.label}`;
+    setChipStyle(btn, k, true);
+    btn.onclick = () => {
+      const on = activeFilters.has(k);
+      if (on) activeFilters.delete(k); else activeFilters.add(k);
+      setChipStyle(btn, k, !on);
+      render();
+    };
+    wrap.appendChild(btn);
+
+    lg.innerHTML += `<span class="leg-item">
+      <span class="leg-dot" style="background:${v.dot}"></span>
+      <strong style="color:var(--text-primary)">${v.label}:</strong> ${getCatExample(k)}
+    </span>`;
+  }
+}
+
+function setChipStyle(btn, k, on) {
+  const v = CATS[k];
+  btn.style.background = on ? v.bg : 'transparent';
+  btn.style.color = on ? v.text : 'var(--text-muted)';
+  btn.style.borderColor = on ? v.dot : 'var(--border)';
+  btn.classList.toggle('off', !on);
+}
+
+function getCatExample(k) {
+  const ex = { diario:'conciliação bancária, fluxo de caixa', semanal:'saque Pagar.me, fornecedores', quinzenal:'conferência de duplicidades', mensal:'DR, envio NFs, fechamento', pontual:'impostos com data fixa' };
+  return `<span style="color:var(--text-muted)">${ex[k]||''}</span>`;
+}
+
+// ── Render calendar ──
+function render() {
+  const y = cur.getFullYear(), m = cur.getMonth();
+  const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  document.getElementById('month-label').textContent = `${MONTHS[m]} ${y}`;
+
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+
+  const firstDow = new Date(y, m, 1).getDay();
+  const lastDate = new Date(y, m + 1, 0).getDate();
+
+  // leading ghost cells
+  for (let i = 0; i < firstDow; i++) {
+    const c = document.createElement('div');
+    c.className = 'cell ghost';
+    grid.appendChild(c);
+  }
+
+  for (let d = 1; d <= lastDate; d++) {
+    const date = new Date(y, m, d);
+    const wknd = !isUtil(date);
+    const isToday = date.toDateString() === TODAY.toDateString();
+
+    const cell = document.createElement('div');
+    cell.className = 'cell' + (wknd ? ' weekend-cell' : '') + (isToday ? ' today-cell' : '');
+
+    const dayNum = document.createElement('div');
+    dayNum.className = 'day-num' + (isToday ? ' is-today' : '');
+    dayNum.innerHTML = d + (isToday ? ' <span class="today-badge">hoje</span>' : '');
+    cell.appendChild(dayNum);
+
+    if (!wknd) {
+      const tasks = getTasksFor(date);
+      if (tasks.length > 0) {
+        cell.classList.add('has-tasks');
+        const pw = document.createElement('div');
+        pw.className = 'pills';
+        const show = Math.min(tasks.length, 3);
+        for (let i = 0; i < show; i++) {
+          const t = tasks[i], v = CATS[t.cat];
+          const p = document.createElement('div');
+          p.className = 'pill';
+          p.style.background = v.bg;
+          p.style.color = v.text;
+          p.textContent = t.title;
+          pw.appendChild(p);
+        }
+        if (tasks.length > 3) {
+          const ml = document.createElement('div');
+          ml.className = 'more-lbl';
+          ml.textContent = `+${tasks.length - 3} tarefa${tasks.length - 3 > 1 ? 's' : ''}`;
+          pw.appendChild(ml);
+        }
+        cell.appendChild(pw);
+        cell.onclick = () => openModal(date, tasks);
+      } else {
+        const el = document.createElement('div');
+        el.className = 'empty-lbl';
+        el.textContent = 'Sem tarefas';
+        cell.appendChild(el);
+        cell.style.cursor = 'default';
+      }
+    }
+    grid.appendChild(cell);
+  }
+
+  // trailing ghost cells to complete last row
+  const total = firstDow + lastDate;
+  const rem = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let i = 0; i < rem; i++) {
+    const c = document.createElement('div');
+    c.className = 'cell ghost';
+    grid.appendChild(c);
+  }
+}
+
+// ── Modal ──
+function openModal(date, tasks) {
+  const opts = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+  document.getElementById('m-date').textContent = date.toLocaleDateString('pt-BR', opts);
+  document.getElementById('m-sub').textContent = `${tasks.length} tarefa${tasks.length > 1 ? 's' : ''} neste dia`;
+
+  const body = document.getElementById('m-body');
+  body.innerHTML = '';
+
+  for (const t of tasks) {
+    const v = CATS[t.cat];
+    const card = document.createElement('div');
+    card.className = 'task-card';
+
+    card.innerHTML = `
+      <div class="task-card-header" onclick="toggleCard(this.closest('.task-card'))">
+        <span class="task-cat-dot" style="background:${v.dot}"></span>
+        <span class="task-title">${t.title}</span>
+        <span class="task-badge" style="background:${v.bg};color:${v.text}">${v.label}</span>
+        <span class="chevron">
+          <svg viewBox="0 0 16 16"><polyline points="4 6 8 10 12 6"/></svg>
+        </span>
+      </div>
+      <div class="task-card-body">
+        <div class="task-meta-row">
+          <span class="meta-chip">
+            <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+            ${t.freq}
+          </span>
+          <span class="meta-chip">
+            <svg viewBox="0 0 16 16"><path d="M8 2a4 4 0 1 0 0 8A4 4 0 0 0 8 2z"/><path d="M2 14c0-2.2 2.7-4 6-4s6 1.8 6 4"/></svg>
+            ${t.resp}
+          </span>
+        </div>
+        <div class="task-desc">${t.desc}</div>
+      </div>`;
+    body.appendChild(card);
+  }
+
+  document.getElementById('modal-bg').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function toggleCard(card) {
+  card.classList.toggle('expanded');
+}
+
+function closeModal() {
+  document.getElementById('modal-bg').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function bgClick(e) {
+  if (e.target === document.getElementById('modal-bg')) closeModal();
+}
+
+// ── Navigation ──
+function changeMonth(dir) {
+  cur = new Date(cur.getFullYear(), cur.getMonth() + dir, 1);
+  render();
+}
+
+function goToday() {
+  cur = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
+  render();
+}
+
+// ── Init ──
+buildFilters();
+render();
+</script>
+</body>
+</html>
