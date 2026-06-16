@@ -319,21 +319,7 @@ main{max-width:1280px;margin:0 auto;padding:1.5rem 2rem 4rem}
   </div>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-app.js";
-import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCSVPpcASPypA_vNDx2HwmTCRu8e3IsXqg",
-  authDomain: "calendario-financeiro-el-35fc5.firebaseapp.com",
-  projectId: "calendario-financeiro-el-35fc5",
-  storageBucket: "calendario-financeiro-el-35fc5.firebasestorage.app",
-  messagingSenderId: "982132849598",
-  appId: "1:982132849598:web:a3cf513722552785fdd7ef"
-};
-const fbApp = initializeApp(firebaseConfig);
-const db = getFirestore(fbApp);
-const colRef = collection(db, "tarefas_manuais");
+<script>
 // ── Data ──────────────────────────────────────────────
 const CATS={
   diario:   {label:'Diário',         bg:'#dbeafe',text:'#1e3a8a',dot:'#004F92',bar:'#004F92'},
@@ -386,8 +372,9 @@ const TASKS=[
   {id:23,title:'Conciliação bancária mensal — Conta Simples', cat:'mensal', resp:'Assistente (Marcela) / Coordenação (Eulália)', freq:'Final do mês', desc:'Conta Simples é conciliada apenas uma vez ao mês (tem somente um rendimento mensal). Conferir todos os lançamentos do período e verificar se o saldo está correto.', role:'todos', rule:d=>isUtil(d)&&d.getDate()===28},
 ];
 
-// Local cache synced from Firestore
+// Tarefas manuais em memória (por sessão)
 let manualTasks = [];
+let nextManualId = 1000;
 
 const TODAY=new Date(2026,5,15);
 let cur=new Date(TODAY.getFullYear(),TODAY.getMonth(),1);
@@ -459,7 +446,7 @@ function doSearch(q){
   } else {
     title.textContent=`${results.length} atividade${results.length>1?'s':''} encontrada${results.length>1?'s':''} para "${q}"`;
     results.forEach(t=>{
-      const isManual=String(t.id).startsWith('fb_');
+      const isManual=t.id>=1000;
       const v=isManual?{bg:'#fff3e0',text:'#7c3000',dot:'#E05C16',label:'Manual'}:CATS[t.cat];
       const rv=ROLES[t.role]||ROLES.todos;
       const div=document.createElement('div');div.className='search-result-item';
@@ -503,14 +490,14 @@ function render(){
     cell.appendChild(dn);
     if(!wknd){
       const tasks=getTasksFor(date);
-      const hasManual=tasks.some(t=>String(t.id).startsWith('fb_'));
+      const hasManual=tasks.some(t=>t.id>=1000);
       if(tasks.length>0){
-        cell.classList.add(hasManual&&tasks.every(t=>String(t.id).startsWith('fb_'))?'has-manual':'has-tasks');
+        cell.classList.add(hasManual&&tasks.every(t=>t.id>=1000)?'has-manual':'has-tasks');
         const pw=document.createElement('div');pw.className='pills';
         const show=Math.min(tasks.length,3);
         for(let i=0;i<show;i++){
           const t=tasks[i];
-          const isM=String(t.id).startsWith('fb_');
+          const isM=t.id>=1000;
           const v=isM?{bg:'#fff3e0',text:'#7c3000'}:CATS[t.cat];
           const p=document.createElement('div');
           p.className='pill'+(isM?' manual-pill':'');
@@ -545,7 +532,7 @@ function openModal(date,tasks){
   const body=document.getElementById('m-body');body.innerHTML='';
 
   for(const t of tasks){
-    const isM=String(t.id).startsWith('fb_');
+    const isM=t.id>=1000;
     const v=isM?{bg:'#fff3e0',text:'#7c3000',bar:'#E05C16',label:'Manual'}:CATS[t.cat];
     const rv=ROLES[t.role]||ROLES.todos;
     const card=document.createElement('div');
@@ -566,7 +553,7 @@ function openModal(date,tasks){
           </span>
         </div>
         <div class="task-desc">${t.desc||'Sem descrição.'}</div>
-        ${isM?`<button class="delete-btn" onclick="deleteTask('${t.firestoreId}')">Excluir esta tarefa</button>`:''}
+        ${isM?`<button class="delete-btn" onclick="deleteTask(${t.id})">Excluir esta tarefa</button>`:''}
       </div>`;
     body.appendChild(card);
   }
@@ -592,33 +579,23 @@ function openAddModal(dateStr){
 function closeAddModal(){document.getElementById('add-modal-bg').classList.remove('open');document.body.style.overflow=''}
 function addBgClick(e){if(e.target===document.getElementById('add-modal-bg'))closeAddModal()}
 
-async function saveTask(){
+function saveTask(){
   const date=document.getElementById('f-date').value;
   const title=document.getElementById('f-title').value.trim();
   const desc=document.getElementById('f-desc').value.trim();
   const role=document.getElementById('f-role').value;
   if(!date||!title){alert('Preencha a data e o título da tarefa.');return}
   const rv=ROLES[role];
-  const btn=document.querySelector('.btn-save');
-  btn.textContent='Salvando...';btn.disabled=true;
-  try {
-    await addDoc(colRef,{title,desc,date,role,resp:rv.label,freq:'Tarefa manual',createdAt:Date.now()});
-    closeAddModal();
-  } catch(e){
-    alert('Erro ao salvar. Verifique sua conexão.');
-    console.error(e);
-  }
-  btn.textContent='Salvar tarefa';btn.disabled=false;
+  manualTasks.push({id:nextManualId++,title,desc,date,role,resp:rv.label,freq:'Tarefa manual'});
+  closeAddModal();
+  render();
 }
 
-async function deleteTask(firestoreId){
+function deleteTask(id){
   if(!confirm('Excluir esta tarefa?')) return;
-  try {
-    await deleteDoc(doc(db,'tarefas_manuais',firestoreId));
-    closeModal();
-  } catch(e){
-    alert('Erro ao excluir.');console.error(e);
-  }
+  manualTasks=manualTasks.filter(t=>t.id!==id);
+  closeModal();
+  render();
 }
 
 // ── Deadlines panel ──────────────────────────────────
@@ -797,30 +774,6 @@ function goToday(){cur=new Date(TODAY.getFullYear(),TODAY.getMonth(),1);render()
 buildUI();
 render();
 renderDeadlines();
-
-// ── Firebase real-time listener ──
-onSnapshot(colRef, (snapshot) => {
-  manualTasks = snapshot.docs.map(d => ({
-    ...d.data(),
-    id: 'fb_' + d.id,
-    firestoreId: d.id,
-  }));
-  render();
-});
-
-// Expose functions to global scope (required for onclick in HTML with ES modules)
-window.changeMonth = changeMonth;
-window.goToday = goToday;
-window.openAddModal = openAddModal;
-window.closeAddModal = closeAddModal;
-window.addBgClick = addBgClick;
-window.saveTask = saveTask;
-window.deleteTask = deleteTask;
-window.closeModal = closeModal;
-window.bgClick = bgClick;
-window.toggleCard = toggleCard;
-window.doSearch = doSearch;
-window.clearSearch = clearSearch;
 </script>
 </body>
 </html>
