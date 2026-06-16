@@ -379,7 +379,7 @@ const TASKS=[
 let manualTasks = [];
 let nextManualId = 1000;
 
-const TODAY=new Date(2026,5,15);
+const TODAY=new Date(); TODAY.setHours(0,0,0,0);
 let cur=new Date(TODAY.getFullYear(),TODAY.getMonth(),1);
 let activeF=new Set(Object.keys(CATS));
 let activeR=new Set(Object.keys(ROLES));
